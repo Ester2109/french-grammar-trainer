@@ -20,9 +20,13 @@
 
 /* GENERAL */
 
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+}
 
-html { scroll-behavior: smooth; }
+html {
+  scroll-behavior: smooth;
+}
 
 body {
   margin: 0;
@@ -31,8 +35,15 @@ body {
   color: var(--dark);
 }
 
-button, input, select { font: inherit; }
-button { cursor: pointer; }
+button,
+input,
+select {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
 
 button:focus-visible,
 a:focus-visible,
@@ -42,8 +53,15 @@ select:focus-visible {
   outline-offset: 3px;
 }
 
-h1, h2, h3 { font-family: 'Poppins', sans-serif; }
-.hidden { display: none !important; }
+h1,
+h2,
+h3 {
+  font-family: 'Poppins', sans-serif;
+}
+
+.hidden {
+  display: none !important;
+}
 
 /* NAVIGATION */
 
@@ -99,7 +117,9 @@ h1, h2, h3 { font-family: 'Poppins', sans-serif; }
   font-weight: 600;
 }
 
-.navbar nav a:hover { color: var(--blue); }
+.navbar nav a:hover {
+  color: var(--blue);
+}
 
 .nav-tag {
   background: var(--blue-light);
@@ -282,7 +302,9 @@ h1 {
 /* SECTIONS */
 
 .categories,
-.trainer { padding: 75px 0; }
+.trainer {
+  padding: 75px 0;
+}
 
 .section-label {
   color: var(--blue);
@@ -341,7 +363,9 @@ h2 {
   color: var(--dark);
 }
 
-.category-card.active { border-color: #dbe5ff; }
+.category-card.active {
+  border-color: #dbe5ff;
+}
 
 .category-card.active:hover,
 .mode-card:hover {
@@ -424,7 +448,9 @@ h2 {
   margin-bottom: 25px;
 }
 
-.back-button:hover { color: var(--red-dark); }
+.back-button:hover {
+  color: var(--red-dark);
+}
 
 .mode-grid {
   display: grid;
@@ -442,7 +468,9 @@ h2 {
   border: 1px solid var(--border);
 }
 
-.exercise-panel h3 { color: var(--navy); }
+.exercise-panel h3 {
+  color: var(--navy);
+}
 
 .exercise-options {
   display: grid;
@@ -476,8 +504,13 @@ select:focus,
 
 /* GAME SETTINGS */
 
-.settings-group { margin: 25px 0; }
-.settings-group > select { max-width: 260px; }
+.settings-group {
+  margin: 25px 0;
+}
+
+.settings-group > select {
+  max-width: 260px;
+}
 
 .settings-hint {
   font-size: 14px;
@@ -499,7 +532,9 @@ select:focus,
   font-weight: 700;
 }
 
-.selection-actions button:hover { background: #dbe5ff; }
+.selection-actions button:hover {
+  background: #dbe5ff;
+}
 
 #tense-checkboxes {
   display: grid;
@@ -555,7 +590,9 @@ select:focus,
   color: var(--blue-dark);
 }
 
-.exercise-heading p { color: var(--muted); }
+.exercise-heading p {
+  color: var(--muted);
+}
 
 #progress-label {
   color: var(--blue);
@@ -572,7 +609,9 @@ select:focus,
   margin-bottom: 15px;
 }
 
-.answer-row label { margin: 0; }
+.answer-row label {
+  margin: 0;
+}
 
 .answer-input.correct {
   border: 2px solid #32b88b;
@@ -611,8 +650,13 @@ select:focus,
   transform: translateY(-2px);
 }
 
-#next-btn { background: var(--red); }
-#next-btn:hover { background: var(--red-dark); }
+#next-btn {
+  background: var(--red);
+}
+
+#next-btn:hover {
+  background: var(--red-dark);
+}
 
 #feedback {
   margin-top: 20px;
@@ -635,7 +679,9 @@ select:focus,
   margin: 15px 0;
 }
 
-#final-results p { color: var(--muted); }
+#final-results p {
+  color: var(--muted);
+}
 
 .result-detail {
   text-align: left;
@@ -659,7 +705,9 @@ footer {
   margin-top: 20px;
 }
 
-.footer-flag { margin-top: 10px; }
+.footer-flag {
+  margin-top: 10px;
+}
 
 /* ENGLISH TRANSLATION */
 
@@ -672,7 +720,7 @@ footer {
   font-style: italic;
 }
 
-/* NEW: VERB SEARCH AND FILTERS */
+/* VERB SEARCH AND FILTERS */
 
 .verb-filter-panel {
   background: #fafcff;
@@ -724,7 +772,9 @@ footer {
   white-space: nowrap;
 }
 
-.verb-random-button:hover { background: #dbe5ff; }
+.verb-random-button:hover {
+  background: #dbe5ff;
+}
 
 .verb-random-button:disabled {
   opacity: .45;
@@ -741,8 +791,13 @@ footer {
 /* RESPONSIVE */
 
 @media (max-width: 850px) {
-  .hero { padding: 40px 28px; }
-  .hero-art { display: none; }
+  .hero {
+    padding: 40px 28px;
+  }
+
+  .hero-art {
+    display: none;
+  }
 
   .category-grid,
   .exercise-options {
@@ -751,12 +806,18 @@ footer {
 }
 
 @media (max-width: 600px) {
-  .navbar { padding: 0 15px; }
+  .navbar {
+    padding: 0 15px;
+  }
 
   .navbar nav,
-  .nav-tag { display: none; }
+  .nav-tag {
+    display: none;
+  }
 
-  main { padding: 0 12px; }
+  main {
+    padding: 0 12px;
+  }
 
   .hero {
     min-height: 350px;
@@ -773,23 +834,29 @@ footer {
   }
 
   .categories,
-  .trainer { padding: 50px 0; }
+  .trainer {
+    padding: 50px 0;
+  }
 
-  .exercise-panel { padding: 20px; }
+  .exercise-panel {
+    padding: 20px;
+  }
 
   .answer-row {
     grid-template-columns: 85px minmax(0,1fr);
   }
 
   .category-card,
-  .mode-card { padding: 23px; }
+  .mode-card {
+    padding: 23px;
+  }
 
-  .verb-selection-row { flex-wrap: wrap; }
+  .verb-selection-row {
+    flex-wrap: wrap;
+  }
 }
 
-/* =========================================
-   SHOW ANSWERS / TRY AGAIN
-========================================= */
+/* SHOW ANSWERS / TRY AGAIN */
 
 .answer-buttons {
   display: flex;
@@ -819,11 +886,7 @@ footer {
   -webkit-text-fill-color: var(--blue-dark);
 }
 
-/* =========================================
-   GAME MODE: RANDOM / CHOOSE VERBS
-========================================= */
-
-/* Mode selection buttons */
+/* GAME MODE: RANDOM / CHOOSE VERBS */
 
 .game-type-selection {
   display: flex;
@@ -838,18 +901,13 @@ footer {
   align-items: center;
   justify-content: center;
   gap: 8px;
-
   padding: 14px 22px;
-
   border: 2px solid var(--border);
   border-radius: 12px;
-
   background: #fafcff;
   color: var(--navy);
-
   font-weight: 700;
   font-size: 15px;
-
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -863,7 +921,6 @@ footer {
   background: var(--blue);
   color: white;
   border-color: var(--blue);
-
   box-shadow: 0 5px 15px #4269e826;
 }
 
@@ -872,23 +929,16 @@ footer {
   border-color: var(--blue-dark);
 }
 
-
-/* =========================================
-   CUSTOM VERB SEARCH
-========================================= */
+/* CUSTOM VERB SEARCH */
 
 .game-custom-search-input {
   display: block;
   width: 100%;
-
   padding: 14px 16px;
-
   border: 1px solid #dce4f2;
   border-radius: 10px;
-
   background: #fafcff;
   color: var(--dark);
-
   font-size: 15px;
   transition: border-color 0.2s ease;
 }
@@ -898,22 +948,17 @@ footer {
   outline: 3px solid #4269e81a;
 }
 
-
-/* Search result container */
+/* Search results container */
 
 .game-custom-search-results {
   margin-top: 8px;
-
   max-height: 260px;
   overflow-y: auto;
-
   background: white;
   border: 1px solid var(--border);
   border-radius: 12px;
-
   box-shadow: var(--shadow);
 }
-
 
 /* Individual search results */
 
@@ -921,19 +966,14 @@ footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
-
   width: 100%;
   padding: 13px 16px;
-
   border: none;
   border-bottom: 1px solid var(--border);
-
   background: white;
   color: var(--dark);
-
   font-weight: 600;
   text-align: left;
-
   cursor: pointer;
   transition: background 0.15s ease;
 }
@@ -955,16 +995,12 @@ footer {
   line-height: 1;
 }
 
-
-/* =========================================
-   SELECTED VERBS
-========================================= */
+/* SELECTED VERBS */
 
 .game-selected-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-
   gap: 12px;
   margin-top: 25px;
   margin-bottom: 14px;
@@ -984,11 +1020,9 @@ footer {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-
   gap: 10px;
   min-height: 45px;
 }
-
 
 /* Individual selected verb tags */
 
@@ -996,18 +1030,13 @@ footer {
   display: inline-flex;
   align-items: center;
   gap: 12px;
-
   padding: 9px 10px 9px 15px;
-
   background: var(--blue-light);
   color: var(--blue-dark);
-
   border: 1px solid #dbe5ff;
   border-radius: 30px;
-
   font-size: 14px;
   font-weight: 700;
-
   transition: background 0.2s ease;
 }
 
@@ -1015,28 +1044,22 @@ footer {
   background: #dbe5ff;
 }
 
-
 /* Remove selected verb */
 
 .game-selected-remove {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-
   width: 23px;
   height: 23px;
-
   padding: 0;
   border: none;
   border-radius: 50%;
-
   background: #ffffff;
   color: var(--blue-dark);
-
   font-size: 19px;
   font-weight: 500;
   line-height: 1;
-
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -1046,25 +1069,19 @@ footer {
   color: white;
 }
 
-
 /* Empty selection and search messages */
 
 .game-custom-empty {
   margin: 0;
   padding: 14px 16px;
-
   color: var(--muted);
   font-size: 14px;
   font-weight: 500;
 }
 
-
-/* =========================================
-   RESPONSIVE GAME MODE
-========================================= */
+/* RESPONSIVE GAME MODE */
 
 @media (max-width: 600px) {
-
   .game-type-selection {
     flex-direction: column;
     align-items: stretch;
@@ -1087,5 +1104,356 @@ footer {
   .game-custom-search-results {
     max-height: 220px;
   }
+}
 
+/* =========================================
+   PRACTICE MODE – CLEAN LAYOUT
+========================================= */
+
+/* Make the original filter grid full width */
+
+#practice-settings .verb-filter-grid {
+  display: block;
+  width: 100%;
+}
+
+/* Search takes full width.
+   Regularity and Verb group take half each. */
+
+#practice-settings .practice-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px 20px;
+  width: 100%;
+}
+
+#practice-settings .practice-filter-grid > div {
+  min-width: 0;
+}
+
+/* Search on the first row */
+
+#practice-settings .practice-search-field {
+  grid-column: 1 / -1;
+  width: 100%;
+  min-width: 0;
+}
+
+/* Regularity on the left */
+
+#practice-settings .practice-regularity-field {
+  grid-column: 1;
+  min-width: 0;
+}
+
+/* Verb group on the right */
+
+#practice-settings .practice-group-field {
+  grid-column: 2;
+  min-width: 0;
+}
+
+/* Make all fields fill their columns */
+
+#practice-settings .practice-search-field input,
+#practice-settings .practice-regularity-field select,
+#practice-settings .practice-group-field select {
+  display: block;
+  width: 100%;
+  max-width: none;
+}
+
+/* =========================================
+   PRACTICE MODE – SEARCH RESULTS
+========================================= */
+
+/* Search results appear directly below
+   the search field, inside the filter panel. */
+
+#practice-settings .practice-search-field {
+  position: relative;
+}
+
+#practice-settings .practice-search-results {
+  position: static;
+  display: flex;
+  flex-direction: column;
+
+  width: 100%;
+  max-height: 300px;
+  overflow-y: auto;
+
+  margin-top: 8px;
+  padding: 5px;
+
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+}
+
+/* Hide results when search is empty */
+
+#practice-settings .practice-search-results.hidden {
+  display: none !important;
+}
+
+/* One verb per row */
+
+#practice-settings .practice-search-result {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  width: 100%;
+  min-height: 58px;
+  padding: 10px 14px;
+  gap: 14px;
+
+  background: white;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+
+  color: var(--dark);
+  text-align: left;
+  cursor: pointer;
+}
+
+/* Hover effect */
+
+#practice-settings .practice-search-result:hover {
+  background: var(--blue-light);
+}
+
+/* French verb and English translation */
+
+#practice-settings .practice-search-result-content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  flex: 1;
+  min-width: 0;
+}
+
+#practice-settings .practice-search-result-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--navy);
+}
+
+#practice-settings .practice-search-result-translation {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--muted);
+  margin-top: 3px;
+}
+
+/* Arrow on the right */
+
+#practice-settings .practice-search-result-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  margin-left: auto;
+
+  border-radius: 8px;
+  background: var(--blue-light);
+  color: var(--blue);
+
+  font-size: 20px;
+  font-weight: 600;
+}
+
+/* Remove the last divider */
+
+#practice-settings .practice-search-result:last-child {
+  border-bottom: none;
+}
+
+/* =========================================
+   PRACTICE MODE – THREE BOTTOM COLUMNS
+========================================= */
+
+/* Allow the controls to use the full width */
+
+#practice-settings .exercise-options {
+  display: block;
+  width: 100%;
+}
+
+/* Verb, mood and tense:
+   three equally wide columns */
+
+#practice-settings .practice-controls-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+  width: 100%;
+  align-items: end;
+}
+
+#practice-settings .practice-controls-row > div {
+  width: 100%;
+  min-width: 0;
+}
+
+/* Make buttons and dropdowns fill their columns */
+
+#practice-settings .practice-controls-row select,
+#practice-settings .practice-controls-row #practice-random-btn {
+  display: block;
+  width: 100%;
+  min-height: 54px;
+}
+
+/* Hide the original unused verb dropdown */
+
+#practice-settings .exercise-options > div:has(#verb-select) {
+  display: none;
+}
+
+/* Random verb button */
+
+#practice-settings .practice-random-field #practice-random-btn {
+  width: 100%;
+  min-height: 54px;
+}
+
+/* =========================================
+   PRACTICE MODE – RESPONSIVE
+========================================= */
+
+@media (max-width: 650px) {
+
+  /* Filters become one column */
+
+  #practice-settings .practice-filter-grid {
+    grid-template-columns: 1fr;
+  }
+
+  #practice-settings .practice-search-field,
+  #practice-settings .practice-regularity-field,
+  #practice-settings .practice-group-field {
+    grid-column: 1;
+  }
+
+  /* Bottom controls become one column */
+
+  #practice-settings .practice-controls-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* =========================================
+   GAME MODE – SEARCH RESULTS
+   ========================================= */
+
+/* Keep search results directly below
+   the search input, inside the panel. */
+
+#game-custom-settings .game-custom-search-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+#game-custom-search-results {
+  position: static;
+  display: flex;
+  flex-direction: column;
+
+  width: 100%;
+  max-height: 320px;
+  overflow-y: auto;
+
+  margin-top: 8px;
+  padding: 5px;
+
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 12px 30px #202d5020;
+}
+
+/* One result per row */
+
+#game-custom-search-results .practice-search-result {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  width: 100%;
+  min-height: 58px;
+  padding: 10px 14px;
+  gap: 14px;
+
+  background: white;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+
+  color: var(--dark);
+  text-align: left;
+  cursor: pointer;
+}
+
+#game-custom-search-results .practice-search-result:hover {
+  background: var(--blue-light);
+}
+
+/* French verb and English translation */
+
+#game-custom-search-results .practice-search-result-content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  flex: 1;
+  min-width: 0;
+}
+
+#game-custom-search-results .practice-search-result-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--navy);
+}
+
+#game-custom-search-results .practice-search-result-translation {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--muted);
+  margin-top: 3px;
+}
+
+/* Plus button on the right */
+
+#game-custom-search-results .practice-search-result-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+
+  border-radius: 8px;
+  background: var(--blue-light);
+  color: var(--blue);
+
+  font-size: 20px;
+  font-weight: 600;
+}
+
+#game-custom-search-results .practice-search-result:last-child {
+  border-bottom: none;
+}
+
+/* Preserve hidden search results */
+
+#game-custom-search-results.hidden {
+  display: none !important;
 }

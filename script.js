@@ -1,14 +1,10 @@
 
 /* =========================================
    FRENCH GRAMMAR TRAINER
-   Complete JavaScript
+   Complete script.js — Part 1
 ========================================= */
 
 const $ = id => document.getElementById(id);
-
-/* =========================================
-   GRAMMAR LABELS
-========================================= */
 
 const pronouns = [
   "je",
@@ -19,11 +15,7 @@ const pronouns = [
   "ils / elles"
 ];
 
-const imperativePronouns = [
-  "tu",
-  "nous",
-  "vous"
-];
+const imperativePronouns = ["tu", "nous", "vous"];
 
 const moodNames = {
   indicatif: "Indicatif",
@@ -56,7 +48,7 @@ const tenseNames = {
 const validMoods = Object.keys(moodNames);
 
 /* =========================================
-   GLOBAL VARIABLES
+   GLOBAL STATE
 ========================================= */
 
 let verbs = {};
@@ -64,10 +56,9 @@ let sortedVerbNames = [];
 let filteredVerbNames = [];
 
 let mode = "practice";
-
-// Choose verbs is the default Game Mode.
 let gameType = "custom";
 
+let selectedPracticeVerb = "";
 let selectedCustomVerbs = [];
 
 let gameQuestions = [];
@@ -81,15 +72,15 @@ let submitted = false;
 let answersRevealed = false;
 
 /* =========================================
-   BASIC HELPERS
+   HELPERS
 ========================================= */
 
 function show(id) {
-  $(id).classList.remove("hidden");
+  $(id)?.classList.remove("hidden");
 }
 
 function hide(id) {
-  $(id).classList.add("hidden");
+  $(id)?.classList.add("hidden");
 }
 
 function normalize(text) {
@@ -127,10 +118,6 @@ function getLabels(mood, answers) {
   return pronouns.slice(0, answers.length);
 }
 
-/* =========================================
-   VALIDATE CONJUGATION ARRAYS
-========================================= */
-
 function isUsableAnswers(answers) {
   return (
     Array.isArray(answers) &&
@@ -143,9 +130,39 @@ function isUsableAnswers(answers) {
   );
 }
 
-/* =========================================
-   GET ALL AVAILABLE TENSES
-========================================= */
+function getTranslations(name) {
+  const translations = verbs[name]?.translation_en;
+
+  if (Array.isArray(translations)) {
+    return translations
+      .filter(value => typeof value === "string")
+      .map(value => value.trim())
+      .filter(Boolean);
+  }
+
+  if (
+    typeof translations === "string" &&
+    translations.trim()
+  ) {
+    return [translations.trim()];
+  }
+
+  return [];
+}
+
+function getShortTranslation(name, maxLength = 100) {
+  const text = getTranslations(name).join(" · ");
+
+  if (!text) {
+    return "";
+  }
+
+  if (text.length <= maxLength) {
+    return text;
+  }
+
+  return text.slice(0, maxLength - 1).trimEnd() + "…";
+}
 
 function getAllTenses() {
   const result = [];
@@ -179,10 +196,6 @@ function getAllTenses() {
   return result;
 }
 
-/* =========================================
-   SHUFFLE ARRAY
-========================================= */
-
 function shuffle(array) {
   for (let i = array.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -193,6 +206,106 @@ function shuffle(array) {
   return array;
 }
 
+function randomItem(array) {
+  return array[Math.floor(Math.random() * array.length)];
+}
+
+/* =========================================
+   SEARCH RESULTS
+========================================= */
+
+function createSearchResult(name, symbol, onClick) {
+  const button = document.createElement("button");
+
+  button.type = "button";
+  button.className = "practice-search-result";
+
+  const content = document.createElement("span");
+  content.className = "practice-search-result-content";
+
+  const verbName = document.createElement("span");
+  verbName.className = "practice-search-result-name";
+  verbName.textContent = name;
+
+  const translation = document.createElement("span");
+  translation.className = "practice-search-result-translation";
+  translation.textContent = getShortTranslation(name, 90);
+
+  content.appendChild(verbName);
+
+  if (translation.textContent) {
+    content.appendChild(translation);
+  }
+
+  const icon = document.createElement("span");
+  icon.className = "practice-search-result-icon";
+  icon.textContent = symbol;
+  icon.setAttribute("aria-hidden", "true");
+
+  button.append(content, icon);
+  button.addEventListener("click", onClick);
+
+  return button;
+}
+
+function rankSearchMatch(name, search) {
+  const normalizedName = normalizeSearch(name);
+
+  if (normalizedName === search) {
+    return 0;
+  }
+
+  if (normalizedName.startsWith(search)) {
+    return 1;
+  }
+
+  if (normalizedName.includes(search)) {
+    return 2;
+  }
+
+  const translations = getTranslations(name);
+
+  if (
+    translations.some(
+      value => normalizeSearch(value) === search
+    )
+  ) {
+    return 3;
+  }
+
+  if (
+    translations.some(
+      value => normalizeSearch(value).startsWith(search)
+    )
+  ) {
+    return 4;
+  }
+
+  return 5;
+}
+
+function sortSearchMatches(names, query) {
+  const search = normalizeSearch(query);
+
+  return [...names].sort((a, b) => {
+    const rankA = rankSearchMatch(a, search);
+    const rankB = rankSearchMatch(b, search);
+
+    if (rankA !== rankB) {
+      return rankA - rankB;
+    }
+
+    return a.localeCompare(b, "fr");
+  });
+}
+
+/* =========================================
+   FRENCH GRAMMAR TRAINER
+   Complete script.js — Part 2
+
+   PRACTICE MODE
+========================================= */
+
 /* =========================================
    LOAD VERB DATABASE
 ========================================= */
@@ -202,63 +315,77 @@ async function loadVerbs() {
     const response = await fetch("verbs.json");
 
     if (!response.ok) {
-      throw new Error("Could not load verbs.json");
+      throw new Error(
+        `Could not load verbs.json (${response.status})`
+      );
     }
 
-    const data = await response.json();
+    const document = await response.json();
+    const database = document.verbs || document;
 
-    verbs = data.verbs || data;
+    if (!database || typeof database !== "object") {
+      throw new Error("Invalid verb database");
+    }
+
+    verbs = database;
 
     sortedVerbNames = Object.keys(verbs)
-      .filter(name => name !== "_meta")
+      .filter(name => {
+        return (
+          !name.startsWith("_") &&
+          verbs[name] &&
+          typeof verbs[name] === "object"
+        );
+      })
       .sort((a, b) => a.localeCompare(b, "fr"));
 
-    if (!sortedVerbNames.length) {
-      throw new Error("The verb database is empty");
-    }
+    filteredVerbNames = [...sortedVerbNames];
 
     updatePracticeVerbs();
     populateGameTenses();
     renderSelectedCustomVerbs();
 
     console.log(
-      `Loaded ${sortedVerbNames.length} French verbs.`
+      `${sortedVerbNames.length} French verbs loaded.`
     );
-
   } catch (error) {
-    console.error(error);
+    console.error("Error loading verbs:", error);
 
-    $("mode-selection").innerHTML = `
-      <p class="error-message">
-        Could not load the verb database.
-        Check that verbs.json is in the same folder
-        and open the website using Live Server.
-      </p>
-    `;
+    const message = document.createElement("p");
+    message.className = "error-message";
+    message.textContent =
+      "Could not load the verb database. Please check verbs.json.";
+
+    $("mode-selection")?.appendChild(message);
   }
 }
 
 /* =========================================
-   SEARCH AND FILTER VERBS
-   USED BY PRACTICE MODE
+   PRACTICE MODE: FILTERING
 ========================================= */
 
-function matchingVerbs(groupId, regularId, query = "") {
+function matchingVerbs(group, regularity, query = "") {
   const search = normalizeSearch(query);
 
   return sortedVerbNames.filter(name => {
-    const verb = verbs[name];
+    const data = verbs[name];
+
+    if (!data) {
+      return false;
+    }
 
     if (
-      groupId !== "all" &&
-      String(verb.group) !== groupId
+      group &&
+      group !== "all" &&
+      String(data.group) !== String(group)
     ) {
       return false;
     }
 
     if (
-      regularId !== "all" &&
-      String(verb.regular) !== regularId
+      regularity &&
+      regularity !== "all" &&
+      String(data.regular) !== String(regularity)
     ) {
       return false;
     }
@@ -271,99 +398,191 @@ function matchingVerbs(groupId, regularId, query = "") {
       return true;
     }
 
-    const translations = Array.isArray(verb.translation_en)
-      ? verb.translation_en
-      : typeof verb.translation_en === "string"
-        ? [verb.translation_en]
-        : [];
-
-    return translations.some(
-      translation =>
-        normalizeSearch(translation).includes(search)
-    );
+    return getTranslations(name).some(translation => {
+      return normalizeSearch(translation).includes(search);
+    });
   });
 }
 
+function getPracticeFilterMatches(query = "") {
+  const group = $("practice-group")?.value || "all";
+  const regularity = $("practice-regular")?.value || "all";
+
+  return matchingVerbs(group, regularity, query);
+}
+
 /* =========================================
-   PRACTICE MODE VERB SELECTION
+   PRACTICE MODE: UPDATE FILTERS
 ========================================= */
 
 function updatePracticeVerbs() {
-  const select = $("verb-select");
-  const previousVerb = select.value;
+  const searchInput = $("verb-search");
+  const query = searchInput?.value || "";
 
-  filteredVerbNames = matchingVerbs(
-    $("practice-group").value,
-    $("practice-regular").value,
-    $("verb-search").value
-  );
+  const previousVerb = selectedPracticeVerb;
 
-  const visibleVerbs = filteredVerbNames.slice(0, 200);
+  // The available verbs depend on group and regularity.
+  // Search only controls the suggestions, not the
+  // currently selected exercise.
+  filteredVerbNames = getPracticeFilterMatches("");
 
-  if (
-    previousVerb &&
-    filteredVerbNames.includes(previousVerb) &&
-    !visibleVerbs.includes(previousVerb)
+  const countElement = $("verb-count");
+
+  if (countElement) {
+    const count = filteredVerbNames.length;
+
+    countElement.textContent =
+      `${count.toLocaleString("en-US")} ` +
+      `${count === 1 ? "verb" : "verbs"} available`;
+  }
+
+  const randomButton = $("practice-random-btn");
+
+  if (randomButton) {
+    randomButton.disabled =
+      filteredVerbNames.length === 0;
+  }
+
+  if (!filteredVerbNames.length) {
+    selectedPracticeVerb = "";
+    clearPracticeExercise(
+      "No verbs match the selected filters."
+    );
+  } else if (
+    !selectedPracticeVerb ||
+    !filteredVerbNames.includes(selectedPracticeVerb)
   ) {
-    visibleVerbs.unshift(previousVerb);
+    selectedPracticeVerb = filteredVerbNames[0];
+
+    populateMoods();
+    populateTenses();
+
+    if (mode === "practice") {
+      renderExercise();
+    }
+  } else if (previousVerb !== selectedPracticeVerb) {
+    populateMoods();
+    populateTenses();
+
+    if (mode === "practice") {
+      renderExercise();
+    }
   }
 
-  select.replaceChildren();
-
-  for (const name of visibleVerbs) {
-    select.add(new Option(name, name));
-  }
-
-  if (
-    previousVerb &&
-    visibleVerbs.includes(previousVerb)
-  ) {
-    select.value = previousVerb;
-  }
-
-  const count = filteredVerbNames.length;
-
-  $("verb-count").textContent =
-    `${count.toLocaleString("en-US")} verbs found` +
-    (count > visibleVerbs.length
-      ? " · Showing the first 200. Search to narrow the results."
-      : "");
-
-  select.disabled = count === 0;
-
-  $("practice-random-btn").disabled = count === 0;
-
-  populateMoods();
-  populateTenses();
-
-  if (count === 0) {
-    clearPracticeExercise("No matching verbs");
-    return;
-  }
-
-  if (
-    mode === "practice" &&
-    !$("exercise-area").classList.contains("hidden")
-  ) {
-    renderExercise();
+  // Only display suggestions while the user is searching.
+  if (query.trim()) {
+    updatePracticeSearchResults();
+  } else {
+    hidePracticeSearchResults();
   }
 }
 
-function selectPracticeVerb(name) {
-  const select = $("verb-select");
+/* =========================================
+   PRACTICE MODE: SEARCH DROPDOWN
+========================================= */
 
+function getPracticeSearchResultsContainer() {
+  let container = $("practice-search-results");
+
+  if (container) {
+    return container;
+  }
+
+  const searchInput = $("verb-search");
+
+  if (!searchInput) {
+    return null;
+  }
+
+  container = document.createElement("div");
+
+  container.id = "practice-search-results";
+  container.className =
+    "practice-search-results hidden";
+
+  const searchField =
+    searchInput.closest(".practice-search-field") ||
+    searchInput.parentElement;
+
+  searchField.style.position = "relative";
+  searchField.appendChild(container);
+
+  return container;
+}
+
+function hidePracticeSearchResults() {
+  const container = $("practice-search-results");
+
+  if (container) {
+    container.classList.add("hidden");
+  }
+}
+
+function updatePracticeSearchResults() {
+  const input = $("verb-search");
+  const container = getPracticeSearchResultsContainer();
+
+  if (!input || !container) {
+    return;
+  }
+
+  const query = input.value.trim();
+
+  container.replaceChildren();
+
+  if (!query) {
+    hidePracticeSearchResults();
+    return;
+  }
+
+  const matches = sortSearchMatches(
+    getPracticeFilterMatches(query),
+    query
+  ).slice(0, 20);
+
+  if (!matches.length) {
+    const empty = document.createElement("p");
+
+    empty.className = "practice-search-empty";
+    empty.textContent = "No matching verbs found.";
+
+    container.appendChild(empty);
+    container.classList.remove("hidden");
+
+    return;
+  }
+
+  for (const name of matches) {
+    const button = createSearchResult(
+      name,
+      "↗",
+      () => selectPracticeVerb(name)
+    );
+
+    container.appendChild(button);
+  }
+
+  container.classList.remove("hidden");
+}
+
+/* =========================================
+   PRACTICE MODE: SELECT VERB
+========================================= */
+
+function selectPracticeVerb(name) {
   if (!verbs[name]) {
     return;
   }
 
-  const exists = Array.from(select.options)
-    .some(option => option.value === name);
+  selectedPracticeVerb = name;
 
-  if (!exists) {
-    select.add(new Option(name, name), 0);
+  const searchInput = $("verb-search");
+
+  if (searchInput) {
+    searchInput.value = "";
   }
 
-  select.value = name;
+  hidePracticeSearchResults();
 
   populateMoods();
   populateTenses();
@@ -373,177 +592,292 @@ function selectPracticeVerb(name) {
   }
 }
 
+/* =========================================
+   PRACTICE MODE: RANDOM VERB
+========================================= */
+
 function pickRandomPracticeVerb() {
   if (!filteredVerbNames.length) {
     return;
   }
 
-  const index = Math.floor(
-    Math.random() * filteredVerbNames.length
+  const available = filteredVerbNames.filter(
+    name => name !== selectedPracticeVerb
   );
 
-  selectPracticeVerb(filteredVerbNames[index]);
-}
+  const pool = available.length
+    ? available
+    : filteredVerbNames;
 
-function clearPracticeExercise(message) {
-  $("answer-fields").replaceChildren();
+  const name = randomItem(pool);
 
-  $("verb-title").textContent = message;
-  $("verb-translation").textContent = "";
-  $("tense-title").textContent = "";
-  $("progress-label").textContent = "PRACTICE MODE";
-
-  submitted = false;
-  answersRevealed = false;
-
-  $("submit-btn").textContent = "Check answers →";
-  $("show-answers-btn").textContent = "Show answers";
-
-  hide("submit-btn");
-  hide("show-answers-btn");
-  hide("feedback");
-  hide("next-btn");
+  selectPracticeVerb(name);
 }
 
 /* =========================================
-   PRACTICE MODE MOODS
+   PRACTICE MODE: GRAMMATICAL MOODS
 ========================================= */
 
 function populateMoods() {
   const select = $("mood-select");
-  const previous = select.value;
+
+  if (!select) {
+    return;
+  }
+
+  const previousValue = select.value;
+  const verb = verbs[selectedPracticeVerb];
 
   select.replaceChildren();
-
-  const verb = verbs[$("verb-select").value];
 
   if (!verb) {
     return;
   }
 
-  for (const mood of validMoods) {
+  const availableMoods = validMoods.filter(mood => {
     const tenses = verb[mood];
 
-    if (
-      tenses &&
-      Object.values(tenses).some(isUsableAnswers)
-    ) {
-      select.add(
-        new Option(getMoodName(mood), mood)
-      );
+    if (!tenses || typeof tenses !== "object") {
+      return false;
     }
+
+    return Object.values(tenses).some(
+      isUsableAnswers
+    );
+  });
+
+  for (const mood of availableMoods) {
+    const option = document.createElement("option");
+
+    option.value = mood;
+    option.textContent = getMoodName(mood);
+
+    select.appendChild(option);
   }
 
-  if (
-    Array.from(select.options)
-      .some(option => option.value === previous)
-  ) {
-    select.value = previous;
+  if (availableMoods.includes(previousValue)) {
+    select.value = previousValue;
+  } else if (availableMoods.length) {
+    select.value = availableMoods[0];
   }
 }
 
 /* =========================================
-   PRACTICE MODE TENSES
+   PRACTICE MODE: VERB TENSES
 ========================================= */
 
 function populateTenses() {
   const select = $("tense-select");
-  const previous = select.value;
+  const mood = $("mood-select")?.value;
+
+  if (!select) {
+    return;
+  }
+
+  const previousValue = select.value;
+  const verb = verbs[selectedPracticeVerb];
 
   select.replaceChildren();
 
-  const verb = verbs[$("verb-select").value];
-  const mood = $("mood-select").value;
-
-  if (!verb?.[mood]) {
+  if (!verb || !mood || !verb[mood]) {
     return;
   }
 
-  for (const [tense, answers] of Object.entries(verb[mood])) {
-    if (!isUsableAnswers(answers)) {
-      continue;
-    }
+  const availableTenses = Object.entries(
+    verb[mood]
+  )
+    .filter(([, answers]) => {
+      return isUsableAnswers(answers);
+    })
+    .map(([tense]) => tense);
 
-    select.add(
-      new Option(getTenseName(mood, tense), tense)
-    );
+  for (const tense of availableTenses) {
+    const option = document.createElement("option");
+
+    option.value = tense;
+    option.textContent = getTenseName(mood, tense);
+
+    select.appendChild(option);
   }
 
-  if (
-    Array.from(select.options)
-      .some(option => option.value === previous)
-  ) {
-    select.value = previous;
+  if (availableTenses.includes(previousValue)) {
+    select.value = previousValue;
+  } else if (availableTenses.length) {
+    select.value = availableTenses[0];
   }
 }
 
 /* =========================================
-   NAVIGATION
+   PRACTICE MODE: CURRENT EXERCISE
 ========================================= */
-
-function openTrainer() {
-  hide("categories");
-  show("trainer");
-
-  window.scrollTo({
-    top: 0,
-    behavior: "smooth"
-  });
-}
-
-function backToCategories() {
-  hide("trainer");
-  hide("exercise-panel");
-
-  show("mode-selection");
-  show("categories");
-
-  window.scrollTo({
-    top: 0,
-    behavior: "smooth"
-  });
-}
-
-function changeMode() {
-  hide("exercise-panel");
-  hide("exercise-area");
-  hide("final-results");
-
-  show("mode-selection");
-}
-
-/* =========================================
-   PRACTICE MODE
-========================================= */
-
-function startPractice() {
-  if (!sortedVerbNames.length) {
-    return;
-  }
-
-  mode = "practice";
-
-  hide("mode-selection");
-  hide("game-settings");
-  hide("final-results");
-
-  show("exercise-panel");
-  show("practice-settings");
-  show("exercise-area");
-
-  renderExercise();
-}
 
 function getPracticeExercise() {
+  const verb = selectedPracticeVerb;
+  const mood = $("mood-select")?.value;
+  const tense = $("tense-select")?.value;
+
+  if (!verb || !mood || !tense) {
+    return null;
+  }
+
+  const answers = verbs[verb]?.[mood]?.[tense];
+
+  if (!isUsableAnswers(answers)) {
+    return null;
+  }
+
   return {
-    verb: $("verb-select").value,
-    mood: $("mood-select").value,
-    tense: $("tense-select").value
+    verb,
+    mood,
+    tense
   };
 }
 
 /* =========================================
+   PRACTICE MODE: EMPTY EXERCISE
+========================================= */
+
+function clearPracticeExercise(message = "") {
+  const title = $("current-verb");
+  const translation = $("verb-translation");
+  const tenseLabel = $("current-tense");
+  const fields = $("answer-fields");
+
+  if (title) {
+    title.textContent = message;
+  }
+
+  if (translation) {
+    translation.textContent = "";
+  }
+
+  if (tenseLabel) {
+    tenseLabel.textContent = "";
+  }
+
+  if (fields) {
+    fields.replaceChildren();
+  }
+
+  submitted = false;
+  answersRevealed = false;
+
+  hide("submit-btn");
+  hide("next-btn");
+  hide("show-answers-btn");
+  hide("feedback");
+}
+
+/* =========================================
+   PRACTICE MODE: PAGE LAYOUT
+
+   Desired layout:
+
+   Search French or English
+   [ Full-width search field ]
+
+   Regularity         Verb group
+   [ Select ]         [ Select ]
+
+   Verb               Grammatical mood     Verb tense
+   [ Random verb ]    [ Select ]           [ Select ]
+========================================= */
+
+function arrangePracticeLayout() {
+  const practice = $("practice-settings");
+
+  const search = $("verb-search");
+  const regular = $("practice-regular");
+  const group = $("practice-group");
+  const random = $("practice-random-btn");
+  const mood = $("mood-select");
+  const tense = $("tense-select");
+
+  if (
+    !practice ||
+    !search ||
+    !regular ||
+    !group ||
+    !random ||
+    !mood ||
+    !tense
+  ) {
+    return;
+  }
+
+  // Prevent the layout from being rebuilt twice.
+  if (practice.dataset.layoutReady === "true") {
+    return;
+  }
+
+  function fieldOf(element) {
+    return (
+      element.closest(
+        ".form-group, .select-group, .field-group"
+      ) || element.parentElement
+    );
+  }
+
+  const searchField = fieldOf(search);
+  const regularField = fieldOf(regular);
+  const groupField = fieldOf(group);
+  const moodField = fieldOf(mood);
+  const tenseField = fieldOf(tense);
+
+  // Use the existing filter container.
+  const filterPanel = searchField.parentElement;
+
+  const filterGrid = document.createElement("div");
+  filterGrid.className = "practice-filter-grid";
+
+  filterPanel.insertBefore(filterGrid, searchField);
+
+  searchField.classList.add("practice-search-field");
+  regularField.classList.add("practice-regularity-field");
+  groupField.classList.add("practice-group-field");
+
+  filterGrid.appendChild(searchField);
+  filterGrid.appendChild(regularField);
+  filterGrid.appendChild(groupField);
+
+  // Create a clean three-column exercise row.
+  const controlsRow = document.createElement("div");
+  controlsRow.className = "practice-controls-row";
+
+  // Insert the row before the original mood field.
+  moodField.parentElement.insertBefore(
+    controlsRow,
+    moodField
+  );
+
+  const randomField = document.createElement("div");
+  randomField.className = "practice-random-field";
+
+  const randomLabel = document.createElement("label");
+  randomLabel.className = "practice-control-label";
+  randomLabel.textContent = "Verb";
+
+  randomField.appendChild(randomLabel);
+  randomField.appendChild(random);
+
+  controlsRow.appendChild(randomField);
+  controlsRow.appendChild(moodField);
+  controlsRow.appendChild(tenseField);
+
+  // Remove empty wrappers left behind by the old layout
+  // only if they contain no other elements.
+  practice.dataset.layoutReady = "true";
+}
+
+/* =========================================
+   FRENCH GRAMMAR TRAINER
+   Complete script.js — Part 3
+
    GAME MODE
+========================================= */
+
+/* =========================================
+   GAME MODE: OPEN AND SWITCH TYPE
 ========================================= */
 
 function startGame() {
@@ -552,9 +886,6 @@ function startGame() {
   }
 
   mode = "game";
-
-  // Always start in Choose verbs.
-  gameType = "custom";
 
   hide("mode-selection");
   hide("practice-settings");
@@ -566,60 +897,69 @@ function startGame() {
 
   hide("game-error");
 
+  // Choose verbs is always the default.
   setGameType("custom");
 }
-
-/* =========================================
-   SWITCH GAME TYPE
-========================================= */
 
 function setGameType(type) {
   gameType = type;
 
-  const randomButton = $("game-random-mode-btn");
   const customButton = $("game-custom-mode-btn");
+  const randomButton = $("game-random-mode-btn");
 
-  randomButton.classList.toggle(
-    "active",
-    type === "random"
-  );
+  if (customButton) {
+    customButton.classList.toggle(
+      "active",
+      type === "custom"
+    );
 
-  customButton.classList.toggle(
-    "active",
-    type === "custom"
-  );
+    customButton.setAttribute(
+      "aria-pressed",
+      String(type === "custom")
+    );
+  }
 
-  randomButton.setAttribute(
-    "aria-pressed",
-    String(type === "random")
-  );
+  if (randomButton) {
+    randomButton.classList.toggle(
+      "active",
+      type === "random"
+    );
 
-  customButton.setAttribute(
-    "aria-pressed",
-    String(type === "custom")
-  );
+    randomButton.setAttribute(
+      "aria-pressed",
+      String(type === "random")
+    );
+  }
 
-  if (type === "random") {
-    show("game-random-settings");
-    hide("game-custom-settings");
-  } else {
-    hide("game-random-settings");
+  if (type === "custom") {
     show("game-custom-settings");
+    hide("game-random-settings");
 
     renderSelectedCustomVerbs();
     updateCustomVerbSearch();
+  } else {
+    hide("game-custom-settings");
+    show("game-random-settings");
+
+    hide("game-custom-search-results");
   }
 
   hide("game-error");
 }
 
 /* =========================================
-   CUSTOM GAME SEARCH
+   GAME MODE: SEARCH FOR VERBS
 ========================================= */
 
 function updateCustomVerbSearch() {
-  const query = $("game-custom-search").value.trim();
+  const input = $("game-custom-search");
   const container = $("game-custom-search-results");
+
+  if (!input || !container) {
+    return;
+  }
+
+  const query = input.value.trim();
 
   container.replaceChildren();
 
@@ -630,73 +970,55 @@ function updateCustomVerbSearch() {
 
   const search = normalizeSearch(query);
 
-  const matches = sortedVerbNames
-    .filter(name => {
-      if (selectedCustomVerbs.includes(name)) {
-        return false;
-      }
-
-      if (normalizeSearch(name).includes(search)) {
-        return true;
-      }
-
-      const translations = verbs[name].translation_en;
-
-      if (Array.isArray(translations)) {
-        return translations.some(
-          translation =>
-            normalizeSearch(translation).includes(search)
-        );
-      }
-
-      if (typeof translations === "string") {
-        return normalizeSearch(translations).includes(search);
-      }
-
+  const matches = sortedVerbNames.filter(name => {
+    if (selectedCustomVerbs.includes(name)) {
       return false;
-    })
-    .slice(0, 20);
+    }
 
-  if (!matches.length) {
+    if (normalizeSearch(name).includes(search)) {
+      return true;
+    }
+
+    return getTranslations(name).some(translation => {
+      return normalizeSearch(translation).includes(search);
+    });
+  });
+
+  const sortedMatches = sortSearchMatches(
+    matches,
+    query
+  ).slice(0, 20);
+
+  if (!sortedMatches.length) {
     const empty = document.createElement("p");
 
-    empty.className = "game-custom-empty";
+    empty.className = "practice-search-empty";
     empty.textContent = "No matching verbs found.";
 
     container.appendChild(empty);
-
     show("game-custom-search-results");
+
     return;
   }
 
-  for (const name of matches) {
-    const button = document.createElement("button");
+  // Same result design as Practice Mode,
+  // with a plus sign instead of an arrow.
 
-    button.type = "button";
-    button.className = "game-custom-result";
+  for (const name of sortedMatches) {
+    const result = createSearchResult(
+      name,
+      "+",
+      () => addCustomVerb(name)
+    );
 
-    const verbName = document.createElement("span");
-    verbName.textContent = name;
-
-    const addIcon = document.createElement("span");
-    addIcon.textContent = "+";
-
-    addIcon.setAttribute("aria-hidden", "true");
-
-    button.append(verbName, addIcon);
-
-    button.addEventListener("click", () => {
-      addCustomVerb(name);
-    });
-
-    container.appendChild(button);
+    container.appendChild(result);
   }
 
   show("game-custom-search-results");
 }
 
 /* =========================================
-   ADD CUSTOM VERB
+   GAME MODE: ADD A VERB
 ========================================= */
 
 function addCustomVerb(name) {
@@ -710,18 +1032,22 @@ function addCustomVerb(name) {
 
   selectedCustomVerbs.push(name);
 
-  $("game-custom-search").value = "";
+  const search = $("game-custom-search");
 
-  updateCustomVerbSearch();
+  if (search) {
+    search.value = "";
+  }
+
+  hide("game-custom-search-results");
   renderSelectedCustomVerbs();
 
   hide("game-error");
 
-  $("game-custom-search").focus();
+  search?.focus();
 }
 
 /* =========================================
-   REMOVE CUSTOM VERB
+   GAME MODE: REMOVE A VERB
 ========================================= */
 
 function removeCustomVerb(name) {
@@ -730,29 +1056,43 @@ function removeCustomVerb(name) {
   );
 
   renderSelectedCustomVerbs();
-  updateCustomVerbSearch();
+
+  const search = $("game-custom-search");
+
+  if (search?.value.trim()) {
+    updateCustomVerbSearch();
+  }
 }
 
 /* =========================================
-   DISPLAY SELECTED VERBS
+   GAME MODE: SELECTED VERB TAGS
 ========================================= */
 
 function renderSelectedCustomVerbs() {
   const container = $("game-selected-verbs");
-  const count = selectedCustomVerbs.length;
+  const counter = $("game-selected-count");
+
+  if (!container) {
+    return;
+  }
 
   container.replaceChildren();
 
-  $("game-selected-count").textContent =
-    `${count} ${count === 1 ? "verb" : "verbs"} selected`;
+  const count = selectedCustomVerbs.length;
 
-  if (count === 0) {
+  if (counter) {
+    counter.textContent =
+      `${count} ${count === 1 ? "verb" : "verbs"} selected`;
+  }
+
+  if (!count) {
     const empty = document.createElement("p");
 
     empty.className = "game-custom-empty";
     empty.textContent = "No verbs selected yet.";
 
     container.appendChild(empty);
+
     return;
   }
 
@@ -784,22 +1124,26 @@ function renderSelectedCustomVerbs() {
 }
 
 /* =========================================
-   GAME TENSE SELECTION
+   GAME MODE: AVAILABLE TENSES
 ========================================= */
 
 function populateGameTenses() {
   const container = $("tense-checkboxes");
+
+  if (!container) {
+    return;
+  }
 
   container.replaceChildren();
 
   const allTenses = getAllTenses();
 
   for (const mood of validMoods) {
-    const tenses = allTenses.filter(
+    const available = allTenses.filter(
       item => item.mood === mood
     );
 
-    if (!tenses.length) {
+    if (!available.length) {
       continue;
     }
 
@@ -811,7 +1155,7 @@ function populateGameTenses() {
 
     group.appendChild(title);
 
-    for (const { tense } of tenses) {
+    for (const { tense } of available) {
       const label = document.createElement("label");
       label.className = "tense-option";
 
@@ -819,12 +1163,14 @@ function populateGameTenses() {
 
       checkbox.type = "checkbox";
       checkbox.value = `${mood}:${tense}`;
+
+      // All tenses are unchecked by default.
       checkbox.checked = false;
 
-      const span = document.createElement("span");
-      span.textContent = getTenseName(mood, tense);
+      const text = document.createElement("span");
+      text.textContent = getTenseName(mood, tense);
 
-      label.append(checkbox, span);
+      label.append(checkbox, text);
       group.appendChild(label);
     }
 
@@ -832,44 +1178,65 @@ function populateGameTenses() {
   }
 }
 
-function setAllTenses(checked) {
-  document
-    .querySelectorAll("#tense-checkboxes input")
-    .forEach(input => {
-      input.checked = checked;
-    });
-}
-
 /* =========================================
-   GET SELECTED TENSES
+   GAME MODE: SELECT ALL / DESELECT ALL
 ========================================= */
+
+function setAllTenses(checked) {
+  const checkboxes = document.querySelectorAll(
+    "#tense-checkboxes input[type='checkbox']"
+  );
+
+  checkboxes.forEach(checkbox => {
+    checkbox.checked = checked;
+  });
+}
 
 function getSelectedTenses() {
   return Array.from(
     document.querySelectorAll(
-      "#tense-checkboxes input:checked"
+      "#tense-checkboxes input[type='checkbox']:checked"
     )
-  ).map(input => input.value);
+  ).map(checkbox => checkbox.value);
 }
 
 /* =========================================
-   SHOW GAME ERROR
+   GAME MODE: ERRORS
 ========================================= */
 
 function showGameError(message) {
-  $("game-error").textContent = message;
+  const element = $("game-error");
+
+  if (!element) {
+    return;
+  }
+
+  element.textContent = message;
   show("game-error");
 }
 
 /* =========================================
-   BUILD RANDOM GAME QUESTIONS
+   GAME MODE: RANDOM QUESTIONS
 ========================================= */
 
 function buildRandomQuestions(selectedTenses) {
-  const count = Number($("question-count").value);
+  const count = Number(
+    $("question-count")?.value || 10
+  );
 
-  // No filters: use every verb in the database.
+  if (!Number.isInteger(count) || count < 1) {
+    showGameError(
+      "Please choose a valid number of questions."
+    );
+
+    return null;
+  }
+
   const pool = [];
+
+  // Random Mode uses all verbs in the database.
+  // Group and regularity filters only apply
+  // to Practice Mode.
 
   for (const verb of sortedVerbNames) {
     const data = verbs[verb];
@@ -877,9 +1244,7 @@ function buildRandomQuestions(selectedTenses) {
     for (const key of selectedTenses) {
       const [mood, tense] = key.split(":");
 
-      const answers = data?.[mood]?.[tense];
-
-      if (isUsableAnswers(answers)) {
+      if (isUsableAnswers(data?.[mood]?.[tense])) {
         pool.push({
           verb,
           mood,
@@ -901,8 +1266,6 @@ function buildRandomQuestions(selectedTenses) {
 
   const questions = [];
 
-  // Avoid repeats until every available
-  // combination has been used.
   while (questions.length < count) {
     const remaining = count - questions.length;
 
@@ -919,7 +1282,7 @@ function buildRandomQuestions(selectedTenses) {
 }
 
 /* =========================================
-   BUILD CUSTOM GAME QUESTIONS
+   GAME MODE: CHOSEN VERBS
 ========================================= */
 
 function buildCustomQuestions(selectedTenses) {
@@ -932,21 +1295,17 @@ function buildCustomQuestions(selectedTenses) {
   }
 
   const questions = [];
-  const unavailableVerbs = [];
+  const unavailable = [];
 
   for (const verb of selectedCustomVerbs) {
-    const data = verbs[verb];
-
     let availableCount = 0;
 
     for (const key of selectedTenses) {
       const [mood, tense] = key.split(":");
 
-      const answers = data?.[mood]?.[tense];
+      const answers = verbs[verb]?.[mood]?.[tense];
 
       if (isUsableAnswers(answers)) {
-        // Every available combination becomes
-        // a separate question.
         questions.push({
           verb,
           mood,
@@ -957,16 +1316,16 @@ function buildCustomQuestions(selectedTenses) {
       }
     }
 
-    if (availableCount === 0) {
-      unavailableVerbs.push(verb);
+    if (!availableCount) {
+      unavailable.push(verb);
     }
   }
 
-  if (unavailableVerbs.length) {
+  if (unavailable.length) {
     showGameError(
       "No selected tense is available for: " +
-      unavailableVerbs.join(", ") +
-      ". Choose other tenses or remove these verbs."
+      unavailable.join(", ") +
+      ". Choose another tense or remove these verbs."
     );
 
     return null;
@@ -980,12 +1339,14 @@ function buildCustomQuestions(selectedTenses) {
     return null;
   }
 
-  // Shuffle all verb + tense combinations.
+  // Every selected verb is tested in each
+  // selected tense that exists in the database.
+
   return shuffle(questions);
 }
 
 /* =========================================
-   BEGIN GAME
+   GAME MODE: BEGIN GAME
 ========================================= */
 
 function beginGame() {
@@ -1018,31 +1379,115 @@ function beginGame() {
   totalAnswers = 0;
   mistakes = [];
 
+  submitted = false;
+  answersRevealed = false;
+
   hide("game-error");
   hide("game-settings");
+  hide("final-results");
 
   show("exercise-area");
 
-  renderExercise();
+  renderExercise(true);
 }
 
 /* =========================================
-   GET CURRENT EXERCISE
+   CURRENT EXERCISE
+
+   Shared by Practice Mode and Game Mode.
 ========================================= */
 
 function getCurrentExercise() {
   if (mode === "game") {
-    return gameQuestions[currentQuestion];
+    return gameQuestions[currentQuestion] || null;
   }
 
   return getPracticeExercise();
 }
 
 /* =========================================
-   RENDER EXERCISE
+   FRENCH GRAMMAR TRAINER
+   Complete script.js — Part 4
+
+   EXERCISES, RESULTS AND INITIALIZATION
 ========================================= */
 
-function renderExercise() {
+/* =========================================
+   NAVIGATION
+========================================= */
+
+function openTrainer() {
+  hide("categories");
+  show("trainer");
+
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth"
+  });
+}
+
+function backToCategories() {
+  hide("trainer");
+  hide("exercise-panel");
+  hide("exercise-area");
+  hide("final-results");
+
+  show("mode-selection");
+  show("categories");
+
+  hidePracticeSearchResults();
+  hide("game-custom-search-results");
+
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth"
+  });
+}
+
+function changeMode() {
+  hide("exercise-panel");
+  hide("exercise-area");
+  hide("final-results");
+
+  show("mode-selection");
+
+  hidePracticeSearchResults();
+  hide("game-custom-search-results");
+}
+
+/* =========================================
+   PRACTICE MODE: START
+========================================= */
+
+function startPractice() {
+  if (!sortedVerbNames.length) {
+    return;
+  }
+
+  mode = "practice";
+
+  hide("mode-selection");
+  hide("game-settings");
+  hide("final-results");
+
+  show("exercise-panel");
+  show("practice-settings");
+  show("exercise-area");
+
+  hidePracticeSearchResults();
+
+  if (!selectedPracticeVerb && filteredVerbNames.length) {
+    selectPracticeVerb(filteredVerbNames[0]);
+  }
+
+  renderExercise(false);
+}
+
+/* =========================================
+   EXERCISE: RENDER
+========================================= */
+
+function renderExercise(focus = false) {
   const exercise = getCurrentExercise();
 
   if (!exercise) {
@@ -1054,7 +1499,6 @@ function renderExercise() {
   }
 
   const { verb, mood, tense } = exercise;
-
   const answers = verbs[verb]?.[mood]?.[tense];
 
   if (!isUsableAnswers(answers)) {
@@ -1070,28 +1514,64 @@ function renderExercise() {
   submitted = false;
   answersRevealed = false;
 
-  $("submit-btn").textContent = "Check answers →";
-  $("show-answers-btn").textContent = "Show answers";
+  const submitButton = $("submit-btn");
+  const showAnswersButton = $("show-answers-btn");
 
-  $("verb-title").textContent = verb;
+  if (submitButton) {
+    submitButton.textContent = "Check answers →";
+  }
 
-  const translations = verbs[verb]?.translation_en || [];
+  if (showAnswersButton) {
+    showAnswersButton.textContent = "Show answers";
+  }
 
-  $("verb-translation").textContent =
-    Array.isArray(translations)
-      ? translations.join(" · ")
-      : String(translations);
+  // Verb heading
 
-  $("tense-title").textContent =
-    `${getMoodName(mood)} — ${getTenseName(mood, tense)}`;
+  const verbTitle =
+    $("verb-title") || $("current-verb");
 
-  $("progress-label").textContent =
-    mode === "game"
-      ? `QUESTION ${currentQuestion + 1} OF ${gameQuestions.length}`
-      : "PRACTICE MODE";
+  if (verbTitle) {
+    verbTitle.textContent = verb;
+  }
+
+  // English translation
+
+  const translationElement = $("verb-translation");
+
+  if (translationElement) {
+    translationElement.textContent =
+      getTranslations(verb).join(" · ");
+  }
+
+  // Mood and tense heading
+
+  const tenseTitle =
+    $("tense-title") || $("current-tense");
+
+  if (tenseTitle) {
+    tenseTitle.textContent =
+      `${getMoodName(mood)} — ${getTenseName(mood, tense)}`;
+  }
+
+  // Progress
+
+  const progress = $("progress-label");
+
+  if (progress) {
+    progress.textContent =
+      mode === "game"
+        ? `QUESTION ${currentQuestion + 1} OF ${gameQuestions.length}`
+        : "PRACTICE MODE";
+  }
+
+  // Answer fields
 
   const labels = getLabels(mood, answers);
   const container = $("answer-fields");
+
+  if (!container) {
+    return;
+  }
 
   container.replaceChildren();
 
@@ -1120,21 +1600,22 @@ function renderExercise() {
   hide("feedback");
   hide("next-btn");
 
-  // Answers can only be revealed in Practice Mode.
   if (mode === "practice") {
     show("show-answers-btn");
   } else {
     hide("show-answers-btn");
   }
 
-  // Preserve search focus while typing.
-  if (document.activeElement !== $("verb-search")) {
+  // Do not automatically focus answer inputs
+  // when Practice Mode filters are changed.
+
+  if (focus && mode === "game") {
     container.querySelector("input")?.focus();
   }
 }
 
 /* =========================================
-   SHOW ANSWERS
+   PRACTICE MODE: SHOW ANSWERS
 ========================================= */
 
 function showAnswers() {
@@ -1161,6 +1642,10 @@ function showAnswers() {
   answers.forEach((answer, index) => {
     const input = $(`answer-${index}`);
 
+    if (!input) {
+      return;
+    }
+
     input.value = answer;
     input.disabled = true;
 
@@ -1171,17 +1656,11 @@ function showAnswers() {
 
     input.classList.add("revealed");
 
-    const correction = input.parentElement.querySelector(
-      ".correction"
-    );
-
-    if (correction) {
-      correction.remove();
-    }
+    input.parentElement
+      .querySelector(".correction")
+      ?.remove();
   });
 
-  // Showing answers does not change
-  // the Check answers button.
   $("submit-btn").textContent = "Check answers →";
   $("show-answers-btn").textContent = "Hide answers";
 
@@ -1191,12 +1670,12 @@ function showAnswers() {
 }
 
 /* =========================================
-   TRY AGAIN
+   PRACTICE MODE: TRY AGAIN
 ========================================= */
 
 function tryAgain() {
-  answersRevealed = false;
   submitted = false;
+  answersRevealed = false;
 
   const inputs = document.querySelectorAll(
     "#answer-fields .answer-input"
@@ -1212,13 +1691,9 @@ function tryAgain() {
       "revealed"
     );
 
-    const correction = input.parentElement.querySelector(
-      ".correction"
-    );
-
-    if (correction) {
-      correction.remove();
-    }
+    input.parentElement
+      .querySelector(".correction")
+      ?.remove();
   });
 
   $("submit-btn").textContent = "Check answers →";
@@ -1232,7 +1707,7 @@ function tryAgain() {
 }
 
 /* =========================================
-   NORMALIZE OPTIONAL SUBJECTS
+   ANSWER NORMALIZATION
 ========================================= */
 
 function removeOptionalSubject(text, index, mood, length) {
@@ -1251,7 +1726,9 @@ function removeOptionalSubject(text, index, mood, length) {
     ["ils ", "elles "]
   ];
 
-  for (const prefix of prefixes[index]) {
+  const possiblePrefixes = prefixes[index] || [];
+
+  for (const prefix of possiblePrefixes) {
     if (answer.startsWith(prefix)) {
       return answer.slice(prefix.length);
     }
@@ -1260,36 +1737,34 @@ function removeOptionalSubject(text, index, mood, length) {
   return answer;
 }
 
-/* =========================================
-   CHECK SINGLE ANSWER
-========================================= */
-
-function isCorrectAnswer(input, expected, index, mood, length) {
-  const userAnswer = removeOptionalSubject(
+function isCorrectAnswer(
+  input,
+  expected,
+  index,
+  mood,
+  length
+) {
+  const normalizedInput = removeOptionalSubject(
     input,
     index,
     mood,
     length
   );
 
-  const correctAnswer = normalize(expected);
-
-  return userAnswer === correctAnswer;
+  return normalizedInput === normalize(expected);
 }
 
 /* =========================================
-   CHECK ALL ANSWERS
+   EXERCISE: CHECK ANSWERS
 ========================================= */
 
 function checkAnswers(event) {
   event.preventDefault();
 
-  // Revealed answers cannot be scored.
   if (answersRevealed) {
     return;
   }
 
-  // Practice Mode: Try again after checking.
   if (submitted && mode === "practice") {
     tryAgain();
     return;
@@ -1318,6 +1793,11 @@ function checkAnswers(event) {
 
   answers.forEach((expected, index) => {
     const input = $(`answer-${index}`);
+
+    if (!input) {
+      return;
+    }
+
     const userAnswer = input.value;
 
     const valid = isCorrectAnswer(
@@ -1349,7 +1829,7 @@ function checkAnswers(event) {
           verb,
           mood,
           tense,
-          pronoun: labels[index],
+          pronoun: labels[index] || "Form",
           answer: userAnswer.trim() || "(blank)",
           expected
         });
@@ -1368,8 +1848,12 @@ function checkAnswers(event) {
     (correct / answers.length) * 100
   );
 
-  $("feedback").textContent =
-    `${correct} / ${answers.length} correct (${percentage}%)`;
+  const feedback = $("feedback");
+
+  if (feedback) {
+    feedback.textContent =
+      `${correct} / ${answers.length} correct (${percentage}%)`;
+  }
 
   show("feedback");
 
@@ -1389,7 +1873,7 @@ function checkAnswers(event) {
 }
 
 /* =========================================
-   NEXT GAME QUESTION
+   GAME MODE: NEXT QUESTION
 ========================================= */
 
 function nextQuestion() {
@@ -1398,12 +1882,12 @@ function nextQuestion() {
   if (currentQuestion >= gameQuestions.length) {
     finishGame();
   } else {
-    renderExercise();
+    renderExercise(true);
   }
 }
 
 /* =========================================
-   FINAL GAME RESULTS
+   GAME MODE: FINAL RESULTS
 ========================================= */
 
 function finishGame() {
@@ -1416,6 +1900,10 @@ function finishGame() {
 
   const container = $("final-results");
 
+  if (!container) {
+    return;
+  }
+
   container.replaceChildren();
 
   const title = document.createElement("h2");
@@ -1425,37 +1913,39 @@ function finishGame() {
   score.textContent = `${percentage}%`;
 
   const summary = document.createElement("p");
+
   summary.textContent =
-    `You got ${totalCorrect} out of ${totalAnswers} answers correct.`;
+    `You got ${totalCorrect} out of ` +
+    `${totalAnswers} answers correct.`;
 
   container.append(title, score, summary);
 
   if (mistakes.length) {
     const heading = document.createElement("h3");
-
     heading.textContent = "Review your mistakes";
-    heading.style.fontSize = "22px";
 
     const list = document.createElement("ul");
     list.className = "result-detail";
 
-    mistakes.forEach(item => {
+    for (const item of mistakes) {
       const li = document.createElement("li");
 
-      const itemHeading = document.createElement("strong");
+      const strong = document.createElement("strong");
 
-      itemHeading.textContent =
-        `${item.verb} — ${getMoodName(item.mood)}, ` +
+      strong.textContent =
+        `${item.verb} — ` +
+        `${getMoodName(item.mood)}, ` +
         `${getTenseName(item.mood, item.tense)}`;
 
       const detail = document.createElement("div");
 
       detail.textContent =
-        `${item.pronoun}: ${item.answer} → ${item.expected}`;
+        `${item.pronoun}: ` +
+        `${item.answer} → ${item.expected}`;
 
-      li.append(itemHeading, detail);
+      li.append(strong, detail);
       list.appendChild(li);
-    });
+    }
 
     container.append(heading, list);
   } else {
@@ -1482,145 +1972,226 @@ function finishGame() {
    EVENT LISTENERS
 ========================================= */
 
-// Navigation
-$("verbs-category").addEventListener(
-  "click",
-  openTrainer
-);
+function initializeEventListeners() {
+  // Navigation
 
-$("back-button").addEventListener(
-  "click",
-  backToCategories
-);
+  $("verbs-category")?.addEventListener(
+    "click",
+    openTrainer
+  );
 
-$("change-mode-btn").addEventListener(
-  "click",
-  changeMode
-);
+  $("back-button")?.addEventListener(
+    "click",
+    backToCategories
+  );
 
-// Main modes
-$("practice-btn").addEventListener(
-  "click",
-  startPractice
-);
+  $("change-mode-btn")?.addEventListener(
+    "click",
+    changeMode
+  );
 
-$("game-btn").addEventListener(
-  "click",
-  startGame
-);
+  // Practice / Game
 
-// Choose verbs / Random verbs
-$("game-custom-mode-btn").addEventListener(
-  "click",
-  () => setGameType("custom")
-);
+  $("practice-btn")?.addEventListener(
+    "click",
+    startPractice
+  );
 
-$("game-random-mode-btn").addEventListener(
-  "click",
-  () => setGameType("random")
-);
+  $("game-btn")?.addEventListener(
+    "click",
+    startGame
+  );
 
-// Custom verb search
-$("game-custom-search").addEventListener(
-  "input",
-  updateCustomVerbSearch
-);
+  // Practice filters
 
-// Start challenge
-$("start-game-button").addEventListener(
-  "click",
-  beginGame
-);
+  $("practice-group")?.addEventListener(
+    "change",
+    () => {
+      updatePracticeVerbs();
+      hidePracticeSearchResults();
+    }
+  );
 
-// Select all tenses
-$("select-all-btn").addEventListener(
-  "click",
-  () => setAllTenses(true)
-);
+  $("practice-regular")?.addEventListener(
+    "change",
+    () => {
+      updatePracticeVerbs();
+      hidePracticeSearchResults();
+    }
+  );
 
-// Deselect all tenses
-$("deselect-all-btn").addEventListener(
-  "click",
-  () => setAllTenses(false)
-);
+  // Practice search
 
-// Check answers
-$("conjugation-form").addEventListener(
-  "submit",
-  checkAnswers
-);
+  $("verb-search")?.addEventListener(
+    "input",
+    updatePracticeSearchResults
+  );
 
-// Next question
-$("next-btn").addEventListener(
-  "click",
-  nextQuestion
-);
+  $("verb-search")?.addEventListener(
+    "keydown",
+    event => {
+      if (event.key === "Escape") {
+        hidePracticeSearchResults();
+      }
 
-// Show / hide answers in Practice Mode
-$("show-answers-btn").addEventListener("click", () => {
-  if (mode !== "practice") {
-    return;
-  }
+      if (event.key === "Enter") {
+        const first = $("practice-search-results")
+          ?.querySelector(".practice-search-result");
 
-  if (answersRevealed) {
-    tryAgain();
-  } else {
-    showAnswers();
-  }
-});
+        if (first) {
+          event.preventDefault();
+          first.click();
+        }
+      }
+    }
+  );
 
-// Practice verb selection
-$("verb-select").addEventListener("change", () => {
-  populateMoods();
-  populateTenses();
+  // Close search results when clicking outside.
 
-  if (mode === "practice") {
-    renderExercise();
-  }
-});
+  document.addEventListener("pointerdown", event => {
+    const search = $("verb-search");
+    const results = $("practice-search-results");
 
-// Practice mood selection
-$("mood-select").addEventListener("change", () => {
-  populateTenses();
+    if (
+      search &&
+      results &&
+      !search.contains(event.target) &&
+      !results.contains(event.target)
+    ) {
+      hidePracticeSearchResults();
+    }
 
-  if (mode === "practice") {
-    renderExercise();
-  }
-});
+    const gameSearch = $("game-custom-search");
+    const gameResults = $("game-custom-search-results");
 
-// Practice tense selection
-$("tense-select").addEventListener("change", () => {
-  if (mode === "practice") {
-    renderExercise();
-  }
-});
+    if (
+      gameSearch &&
+      gameResults &&
+      !gameSearch.contains(event.target) &&
+      !gameResults.contains(event.target)
+    ) {
+      hide("game-custom-search-results");
+    }
+  });
 
-// Practice search
-$("verb-search").addEventListener(
-  "input",
-  updatePracticeVerbs
-);
+  // Random verb
 
-// Practice group filter
-$("practice-group").addEventListener(
-  "change",
-  updatePracticeVerbs
-);
+  $("practice-random-btn")?.addEventListener(
+    "click",
+    pickRandomPracticeVerb
+  );
 
-// Practice regularity filter
-$("practice-regular").addEventListener(
-  "change",
-  updatePracticeVerbs
-);
+  // Mood / Tense
 
-// Random verb in Practice Mode
-$("practice-random-btn").addEventListener(
-  "click",
-  pickRandomPracticeVerb
-);
+  $("mood-select")?.addEventListener(
+    "change",
+    () => {
+      populateTenses();
+
+      if (mode === "practice") {
+        renderExercise(false);
+      }
+    }
+  );
+
+  $("tense-select")?.addEventListener(
+    "change",
+    () => {
+      if (mode === "practice") {
+        renderExercise(false);
+      }
+    }
+  );
+
+  // Game type
+
+  $("game-custom-mode-btn")?.addEventListener(
+    "click",
+    () => setGameType("custom")
+  );
+
+  $("game-random-mode-btn")?.addEventListener(
+    "click",
+    () => setGameType("random")
+  );
+
+  // Game verb search
+
+  $("game-custom-search")?.addEventListener(
+    "input",
+    updateCustomVerbSearch
+  );
+
+  // Game tense selection
+
+  $("select-all-btn")?.addEventListener(
+    "click",
+    () => setAllTenses(true)
+  );
+
+  $("deselect-all-btn")?.addEventListener(
+    "click",
+    () => setAllTenses(false)
+  );
+
+  // Start game
+
+  $("start-game-button")?.addEventListener(
+    "click",
+    beginGame
+  );
+
+  // Answer form
+
+  $("conjugation-form")?.addEventListener(
+    "submit",
+    checkAnswers
+  );
+
+  // Show / hide answers
+
+  $("show-answers-btn")?.addEventListener(
+    "click",
+    () => {
+      if (mode !== "practice") {
+        return;
+      }
+
+      if (answersRevealed) {
+        tryAgain();
+      } else {
+        showAnswers();
+      }
+    }
+  );
+
+  // Next question
+
+  $("next-btn")?.addEventListener(
+    "click",
+    nextQuestion
+  );
+}
 
 /* =========================================
    INITIALIZATION
 ========================================= */
 
-loadVerbs();
+function initializeTrainer() {
+  initializeEventListeners();
+
+  // Build the new Practice Mode layout.
+  arrangePracticeLayout();
+
+  // Load the French verb database.
+  loadVerbs();
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener(
+    "DOMContentLoaded",
+    initializeTrainer
+  );
+} else {
+  initializeTrainer();
+}
